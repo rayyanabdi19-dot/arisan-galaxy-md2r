@@ -1,27 +1,46 @@
 import { motion } from "framer-motion";
 import { TrendingUp, Users, Calendar } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import QuickActions from "../QuickActions";
 
 interface HomePageProps {
   onNavigate: (page: string) => void;
 }
 
-const stats = [
-  { label: "Total Kas", value: "Rp 12.500.000", icon: TrendingUp, change: "+8.2%" },
-  { label: "Anggota", value: "15 Orang", icon: Users, change: "Aktif" },
-  { label: "Putaran", value: "Ke-5 / 15", icon: Calendar, change: "Mei 2026" },
-];
-
-const recentActivity = [
-  { name: "Siti Nurhaliza", action: "membayar iuran", time: "2 jam lalu", amount: "Rp 500.000" },
-  { name: "Budi Santoso", action: "menerima arisan", time: "1 hari lalu", amount: "Rp 7.500.000" },
-  { name: "Dewi Lestari", action: "membayar iuran", time: "2 hari lalu", amount: "Rp 500.000" },
-];
-
 const HomePage = ({ onNavigate }: HomePageProps) => {
+  const [memberCount, setMemberCount] = useState(0);
+  const [drawCount, setDrawCount] = useState(0);
+  const [totalPayments, setTotalPayments] = useState(0);
+  const [recentPayments, setRecentPayments] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetch = async () => {
+      const [m, d, p, rp] = await Promise.all([
+        supabase.from("arisan_members").select("id", { count: "exact", head: true }),
+        supabase.from("arisan_draws").select("id", { count: "exact", head: true }),
+        supabase.from("arisan_payments").select("amount"),
+        supabase.from("arisan_payments").select("*, arisan_members(name)").order("paid_at", { ascending: false }).limit(3),
+      ]);
+      setMemberCount(m.count || 0);
+      setDrawCount(d.count || 0);
+      if (p.data) setTotalPayments(p.data.reduce((s: number, x: any) => s + x.amount, 0));
+      if (rp.data) setRecentPayments(rp.data);
+    };
+    fetch();
+  }, []);
+
+  const iuranPerBulan = 500000;
+  const totalHadiah = memberCount * iuranPerBulan;
+
+  const stats = [
+    { label: "Total Kas", value: `Rp ${totalPayments.toLocaleString("id-ID")}`, icon: TrendingUp, change: "Terkumpul" },
+    { label: "Anggota", value: `${memberCount} Orang`, icon: Users, change: "Aktif" },
+    { label: "Putaran", value: `Ke-${drawCount + 1} / ${memberCount}`, icon: Calendar, change: `${memberCount - drawCount} sisa` },
+  ];
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <p className="text-muted-foreground text-sm">Selamat datang 👋</p>
@@ -32,7 +51,6 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
         </div>
       </div>
 
-      {/* Balance Card */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -41,26 +59,24 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
         <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-primary-foreground/5 -translate-y-8 translate-x-8" />
         <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-primary-foreground/5 translate-y-6 -translate-x-6" />
         <p className="text-primary-foreground/70 text-sm font-medium">Saldo Arisan</p>
-        <h2 className="text-3xl font-extrabold text-primary-foreground mt-1">Rp 12.500.000</h2>
+        <h2 className="text-3xl font-extrabold text-primary-foreground mt-1">Rp {totalPayments.toLocaleString("id-ID")}</h2>
         <div className="flex gap-4 mt-4">
           <div>
             <p className="text-primary-foreground/60 text-[11px]">Iuran/bulan</p>
-            <p className="text-primary-foreground font-semibold text-sm">Rp 500.000</p>
+            <p className="text-primary-foreground font-semibold text-sm">Rp {iuranPerBulan.toLocaleString("id-ID")}</p>
           </div>
           <div>
             <p className="text-primary-foreground/60 text-[11px]">Dapat giliran</p>
-            <p className="text-primary-foreground font-semibold text-sm">Rp 7.500.000</p>
+            <p className="text-primary-foreground font-semibold text-sm">Rp {totalHadiah.toLocaleString("id-ID")}</p>
           </div>
         </div>
       </motion.div>
 
-      {/* Quick Actions */}
       <div>
         <h3 className="text-sm font-semibold mb-3 text-muted-foreground">Menu Cepat</h3>
         <QuickActions onNavigate={onNavigate} />
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         {stats.map((stat, i) => (
           <motion.div
@@ -78,30 +94,37 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
         ))}
       </div>
 
-      {/* Recent Activity */}
       <div>
         <h3 className="text-sm font-semibold mb-3 text-muted-foreground">Aktivitas Terbaru</h3>
         <div className="space-y-3">
-          {recentActivity.map((item, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 + i * 0.05 }}
-              className="glass-card-light rounded-2xl p-3 flex items-center justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full gradient-accent flex items-center justify-center text-xs font-bold text-primary-foreground">
-                  {item.name.split(" ").map(n => n[0]).join("")}
+          {recentPayments.length === 0 ? (
+            <div className="glass-card-light rounded-2xl p-4 text-center text-muted-foreground text-sm">
+              Belum ada aktivitas
+            </div>
+          ) : (
+            recentPayments.map((item: any, i: number) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 + i * 0.05 }}
+                className="glass-card-light rounded-2xl p-3 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full gradient-accent flex items-center justify-center text-xs font-bold text-primary-foreground">
+                    {(item.arisan_members?.name || "?").split(" ").map((n: string) => n[0]).join("")}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">{item.arisan_members?.name}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      membayar iuran · {new Date(item.paid_at).toLocaleDateString("id-ID")}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold">{item.name}</p>
-                  <p className="text-[11px] text-muted-foreground">{item.action} · {item.time}</p>
-                </div>
-              </div>
-              <span className="text-xs font-bold text-secondary">{item.amount}</span>
-            </motion.div>
-          ))}
+                <span className="text-xs font-bold text-secondary">Rp {item.amount.toLocaleString("id-ID")}</span>
+              </motion.div>
+            ))
+          )}
         </div>
       </div>
     </div>

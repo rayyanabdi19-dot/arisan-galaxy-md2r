@@ -1,47 +1,121 @@
-import { motion } from "framer-motion";
-import { UserPlus, Phone, CheckCircle2, Clock } from "lucide-react";
-import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { UserPlus, Phone, CheckCircle2, Clock, Trash2, Edit2, X, Save } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-const initialMembers = [
-  { id: 1, name: "Siti Nurhaliza", phone: "0812-xxxx-1234", status: "lunas", order: 1 },
-  { id: 2, name: "Budi Santoso", phone: "0813-xxxx-5678", status: "lunas", order: 2 },
-  { id: 3, name: "Dewi Lestari", phone: "0856-xxxx-9012", status: "belum", order: 3 },
-  { id: 4, name: "Ahmad Fauzi", phone: "0821-xxxx-3456", status: "lunas", order: 4 },
-  { id: 5, name: "Rina Wati", phone: "0878-xxxx-7890", status: "belum", order: 5 },
-  { id: 6, name: "Joko Widodo", phone: "0857-xxxx-2345", status: "lunas", order: 6 },
-  { id: 7, name: "Maya Sari", phone: "0819-xxxx-6789", status: "lunas", order: 7 },
-  { id: 8, name: "Hendra Gunawan", phone: "0822-xxxx-0123", status: "belum", order: 8 },
-  { id: 9, name: "Fitri Handayani", phone: "0838-xxxx-4567", status: "lunas", order: 9 },
-  { id: 10, name: "Rudi Hartono", phone: "0815-xxxx-8901", status: "lunas", order: 10 },
-  { id: 11, name: "Lina Marlina", phone: "0858-xxxx-2346", status: "belum", order: 11 },
-  { id: 12, name: "Tono Sugiarto", phone: "0823-xxxx-6780", status: "lunas", order: 12 },
-  { id: 13, name: "Wulan Sari", phone: "0877-xxxx-0124", status: "lunas", order: 13 },
-  { id: 14, name: "Dedi Mulyadi", phone: "0816-xxxx-4568", status: "belum", order: 14 },
-  { id: 15, name: "Nia Ramadhani", phone: "0859-xxxx-8902", status: "lunas", order: 15 },
-];
+interface Member {
+  id: string;
+  name: string;
+  phone: string;
+  member_order: number;
+}
+
+interface Payment {
+  member_id: string;
+  month: string;
+  status: string;
+}
 
 const MembersPage = () => {
+  const [members, setMembers] = useState<Member[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [filter, setFilter] = useState<"all" | "lunas" | "belum">("all");
+  const [showAdd, setShowAdd] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [form, setForm] = useState({ name: "", phone: "" });
+  const currentMonth = new Date().toLocaleString("id-ID", { month: "long", year: "numeric" });
 
-  const filtered = initialMembers.filter(m =>
-    filter === "all" ? true : m.status === filter
+  const fetchData = async () => {
+    const [membersRes, paymentsRes] = await Promise.all([
+      supabase.from("arisan_members").select("*").order("member_order"),
+      supabase.from("arisan_payments").select("member_id, month, status").eq("month", currentMonth),
+    ]);
+    if (membersRes.data) setMembers(membersRes.data);
+    if (paymentsRes.data) setPayments(paymentsRes.data);
+  };
+
+  useEffect(() => { fetchData(); }, []);
+
+  const getStatus = (memberId: string) => {
+    const p = payments.find((p) => p.member_id === memberId);
+    return p?.status === "lunas" ? "lunas" : "belum";
+  };
+
+  const filtered = members.filter((m) =>
+    filter === "all" ? true : getStatus(m.id) === filter
   );
 
-  const lunasCount = initialMembers.filter(m => m.status === "lunas").length;
+  const lunasCount = members.filter((m) => getStatus(m.id) === "lunas").length;
+
+  const addMember = async () => {
+    if (!form.name || !form.phone) return;
+    const maxOrder = members.length > 0 ? Math.max(...members.map((m) => m.member_order)) : 0;
+    await supabase.from("arisan_members").insert({
+      name: form.name,
+      phone: form.phone,
+      member_order: maxOrder + 1,
+    });
+    setForm({ name: "", phone: "" });
+    setShowAdd(false);
+    fetchData();
+  };
+
+  const updateMember = async (id: string) => {
+    await supabase.from("arisan_members").update({ name: form.name, phone: form.phone }).eq("id", id);
+    setEditId(null);
+    setForm({ name: "", phone: "" });
+    fetchData();
+  };
+
+  const deleteMember = async (id: string) => {
+    await supabase.from("arisan_members").delete().eq("id", id);
+    fetchData();
+  };
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">Anggota</h1>
-        <button className="w-9 h-9 rounded-xl gradient-accent flex items-center justify-center">
-          <UserPlus className="w-4 h-4 text-primary-foreground" />
+        <button
+          onClick={() => { setShowAdd(!showAdd); setEditId(null); setForm({ name: "", phone: "" }); }}
+          className="w-9 h-9 rounded-xl gradient-accent flex items-center justify-center"
+        >
+          {showAdd ? <X className="w-4 h-4 text-primary-foreground" /> : <UserPlus className="w-4 h-4 text-primary-foreground" />}
         </button>
       </div>
+
+      {/* Add/Edit Form */}
+      <AnimatePresence>
+        {showAdd && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="glass-card rounded-2xl p-4 space-y-3 overflow-hidden"
+          >
+            <input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Nama anggota"
+              className="w-full bg-muted/50 rounded-xl px-3 py-2 text-sm outline-none border border-border/30 focus:border-accent/50"
+            />
+            <input
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              placeholder="No. Telepon"
+              className="w-full bg-muted/50 rounded-xl px-3 py-2 text-sm outline-none border border-border/30 focus:border-accent/50"
+            />
+            <button onClick={addMember} className="w-full gradient-accent rounded-xl py-2 text-sm font-bold text-primary-foreground">
+              Tambah Anggota
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Summary */}
       <div className="glass-card rounded-2xl p-4 flex justify-between">
         <div className="text-center">
-          <p className="text-2xl font-bold">{initialMembers.length}</p>
+          <p className="text-2xl font-bold">{members.length}</p>
           <p className="text-[11px] text-muted-foreground">Total</p>
         </div>
         <div className="text-center">
@@ -49,21 +123,19 @@ const MembersPage = () => {
           <p className="text-[11px] text-muted-foreground">Lunas</p>
         </div>
         <div className="text-center">
-          <p className="text-2xl font-bold text-accent">{initialMembers.length - lunasCount}</p>
+          <p className="text-2xl font-bold text-accent">{members.length - lunasCount}</p>
           <p className="text-[11px] text-muted-foreground">Belum</p>
         </div>
       </div>
 
       {/* Filter */}
       <div className="flex gap-2">
-        {(["all", "lunas", "belum"] as const).map(f => (
+        {(["all", "lunas", "belum"] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
             className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
-              filter === f
-                ? "gradient-primary text-primary-foreground"
-                : "glass-card-light text-muted-foreground"
+              filter === f ? "gradient-primary text-primary-foreground" : "glass-card-light text-muted-foreground"
             }`}
           >
             {f === "all" ? "Semua" : f === "lunas" ? "Lunas" : "Belum Bayar"}
@@ -81,22 +153,48 @@ const MembersPage = () => {
             transition={{ delay: i * 0.03 }}
             className="glass-card-light rounded-2xl p-3 flex items-center justify-between"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
-                #{member.order}
+            {editId === member.id ? (
+              <div className="flex-1 flex items-center gap-2">
+                <input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="flex-1 bg-muted/50 rounded-lg px-2 py-1 text-sm outline-none border border-border/30"
+                />
+                <button onClick={() => updateMember(member.id)}>
+                  <Save className="w-4 h-4 text-secondary" />
+                </button>
+                <button onClick={() => setEditId(null)}>
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
               </div>
-              <div>
-                <p className="text-sm font-semibold">{member.name}</p>
-                <div className="flex items-center gap-1 text-muted-foreground">
-                  <Phone className="w-3 h-3" />
-                  <span className="text-[11px]">{member.phone}</span>
-                </div>
-              </div>
-            </div>
-            {member.status === "lunas" ? (
-              <CheckCircle2 className="w-5 h-5 text-secondary" />
             ) : (
-              <Clock className="w-5 h-5 text-accent" />
+              <>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
+                    #{member.member_order}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">{member.name}</p>
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                      <Phone className="w-3 h-3" />
+                      <span className="text-[11px]">{member.phone}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => { setEditId(member.id); setForm({ name: member.name, phone: member.phone }); setShowAdd(false); }}>
+                    <Edit2 className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                  <button onClick={() => deleteMember(member.id)}>
+                    <Trash2 className="w-4 h-4 text-destructive/70" />
+                  </button>
+                  {getStatus(member.id) === "lunas" ? (
+                    <CheckCircle2 className="w-5 h-5 text-secondary" />
+                  ) : (
+                    <Clock className="w-5 h-5 text-accent" />
+                  )}
+                </div>
+              </>
             )}
           </motion.div>
         ))}
