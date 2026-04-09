@@ -14,7 +14,109 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      arisan_draws: {
+        Row: {
+          amount: number
+          created_at: string
+          draw_date: string
+          id: string
+          member_id: string
+          round: number
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          draw_date?: string
+          id?: string
+          member_id: string
+          round: number
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          draw_date?: string
+          id?: string
+          member_id?: string
+          round?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arisan_draws_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "arisan_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      arisan_members: {
+        Row: {
+          created_at: string
+          id: string
+          member_order: number
+          name: string
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_order: number
+          name: string
+          phone: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_order?: number
+          name?: string
+          phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      arisan_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          member_id: string
+          method: string
+          month: string
+          paid_at: string
+          status: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          member_id: string
+          method?: string
+          month: string
+          paid_at?: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          member_id?: string
+          method?: string
+          month?: string
+          paid_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arisan_payments_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "arisan_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
