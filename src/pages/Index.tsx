@@ -5,6 +5,7 @@ import MembersPage from "@/components/pages/MembersPage";
 import PaymentPage from "@/components/pages/PaymentPage";
 import SchedulePage from "@/components/pages/SchedulePage";
 import HistoryPage from "@/components/pages/HistoryPage";
+import SpinPage from "@/components/pages/SpinPage";
 import { AnimatePresence, motion } from "framer-motion";
 
 const Index = () => {
@@ -17,6 +18,7 @@ const Index = () => {
       case "payment": return <PaymentPage />;
       case "schedule": return <SchedulePage />;
       case "history": return <HistoryPage />;
+      case "spin": return <SpinPage />;
       default: return <HomePage onNavigate={setActivePage} />;
     }
   };
