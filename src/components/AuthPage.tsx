@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Lock, User, Eye, EyeOff, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { APP_VERSION } from "@/lib/version";
 
 const AuthPage = ({ onAuth }: { onAuth: () => void }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -158,6 +159,11 @@ const AuthPage = ({ onAuth }: { onAuth: () => void }) => {
             </button>
           </div>
         </div>
+
+        {/* Version */}
+        <p className="text-center text-[10px] text-muted-foreground/50 mt-6">
+          Arisan Galaxy v{APP_VERSION}
+        </p>
       </motion.div>
     </div>
   );
