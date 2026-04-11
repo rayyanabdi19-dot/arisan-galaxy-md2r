@@ -1,4 +1,4 @@
-import { Home, Users, Wallet, CalendarDays, History } from "lucide-react";
+import { Home, Users, Wallet, CalendarDays, History, Settings } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface BottomNavProps {
@@ -12,6 +12,7 @@ const navItems = [
   { id: "payment", icon: Wallet, label: "Bayar" },
   { id: "schedule", icon: CalendarDays, label: "Jadwal" },
   { id: "history", icon: History, label: "Riwayat" },
+  { id: "settings", icon: Settings, label: "Setelan" },
 ];
 
 const BottomNav = ({ active, onNavigate }: BottomNavProps) => {
