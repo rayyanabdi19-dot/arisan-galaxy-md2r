@@ -1,19 +1,25 @@
 import { motion } from "framer-motion";
-import { Info, HelpCircle, BookOpen, ChevronRight, Sparkles, Shield, Code, Heart } from "lucide-react";
-import { useState } from "react";
+import { Info, HelpCircle, BookOpen, ChevronRight, Sparkles, Shield, Code, Heart, Banknote, Save } from "lucide-react";
+import { useState, useEffect } from "react";
 import { APP_VERSION, BUILD_DATE } from "@/lib/version";
+import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
-type SubPage = "main" | "about" | "helpdesk" | "tutorial";
+type SubPage = "main" | "about" | "helpdesk" | "tutorial" | "nominal";
 
 const SettingsPage = () => {
   const [subPage, setSubPage] = useState<SubPage>("main");
 
   const menuItems = [
+    { id: "nominal" as SubPage, icon: Banknote, label: "Atur Nominal Arisan", desc: "Iuran bulanan & hadiah" },
     { id: "about" as SubPage, icon: Info, label: "Tentang Aplikasi", desc: "Versi, info & lisensi" },
     { id: "helpdesk" as SubPage, icon: HelpCircle, label: "Helpdesk", desc: "Bantuan & FAQ" },
     { id: "tutorial" as SubPage, icon: BookOpen, label: "Tutorial Penggunaan", desc: "Panduan lengkap" },
   ];
 
+  if (subPage === "nominal") return <NominalPage onBack={() => setSubPage("main")} />;
   if (subPage === "about") return <AboutPage onBack={() => setSubPage("main")} />;
   if (subPage === "helpdesk") return <HelpdeskPage onBack={() => setSubPage("main")} />;
   if (subPage === "tutorial") return <TutorialPage onBack={() => setSubPage("main")} />;
