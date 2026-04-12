@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Info, HelpCircle, BookOpen, ChevronRight, Sparkles, Shield, Code, Heart, Banknote, Save } from "lucide-react";
+import { Info, HelpCircle, BookOpen, ChevronRight, Sparkles, Shield, Code, Heart, Banknote, Save, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { APP_VERSION, BUILD_DATE } from "@/lib/version";
 import { supabase } from "@/integrations/supabase/client";
@@ -155,7 +155,8 @@ const BackButton = ({ onBack }: { onBack: () => void }) => (
     onClick={onBack}
     className="text-sm text-accent hover:text-accent/80 transition-colors mb-4 flex items-center gap-1"
   >
-    ← Kembali
+    <ArrowLeft className="w-4 h-4" />
+    Kembali
   </button>
 );
 

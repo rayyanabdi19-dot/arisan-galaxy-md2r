@@ -32,15 +32,18 @@ const PaymentPage = () => {
   const [selectedMethod, setSelectedMethod] = useState("transfer");
   const [selectedMember, setSelectedMember] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [iuran, setIuran] = useState(500000);
   const currentMonth = new Date().toLocaleString("id-ID", { month: "long", year: "numeric" });
 
   const fetchData = async () => {
-    const [m, p] = await Promise.all([
+    const [m, p, s] = await Promise.all([
       supabase.from("arisan_members").select("*").order("member_order"),
       supabase.from("arisan_payments").select("*, arisan_members(name)").order("paid_at", { ascending: false }).limit(10),
+      supabase.from("arisan_settings").select("value").eq("key", "iuran_per_bulan").single(),
     ]);
     if (m.data) setMembers(m.data);
     if (p.data) setPayments(p.data as Payment[]);
+    if (s.data) setIuran(Number(s.data.value) || 500000);
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -53,7 +56,7 @@ const PaymentPage = () => {
     setProcessing(true);
     await supabase.from("arisan_payments").insert({
       member_id: selectedMember,
-      amount: 500000,
+      amount: iuran,
       month: currentMonth,
       method: selectedMethod,
       status: "lunas",
@@ -67,7 +70,6 @@ const PaymentPage = () => {
     <div className="space-y-5">
       <h1 className="text-xl font-bold">Pembayaran</h1>
 
-      {/* Current Payment */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -75,14 +77,13 @@ const PaymentPage = () => {
       >
         <div className="absolute top-0 right-0 w-28 h-28 rounded-full bg-primary-foreground/5 -translate-y-6 translate-x-6" />
         <p className="text-primary-foreground/70 text-sm">Iuran Bulan Ini</p>
-        <h2 className="text-3xl font-extrabold text-primary-foreground mt-1">Rp 500.000</h2>
+        <h2 className="text-3xl font-extrabold text-primary-foreground mt-1">Rp {iuran.toLocaleString("id-ID")}</h2>
         <p className="text-primary-foreground/60 text-xs mt-2">{currentMonth}</p>
         <div className="mt-3 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary-foreground/20 text-primary-foreground text-xs font-semibold">
           <CheckCircle className="w-3 h-3" /> {paidThisMonth.length}/{members.length} sudah bayar
         </div>
       </motion.div>
 
-      {/* Select Member */}
       <div>
         <h3 className="text-sm font-semibold mb-2 text-muted-foreground">Pilih Anggota</h3>
         <select
@@ -97,7 +98,6 @@ const PaymentPage = () => {
         </select>
       </div>
 
-      {/* Payment Method */}
       <div>
         <h3 className="text-sm font-semibold mb-3 text-muted-foreground">Metode Pembayaran</h3>
         <div className="grid grid-cols-3 gap-3">
@@ -116,7 +116,6 @@ const PaymentPage = () => {
         </div>
       </div>
 
-      {/* Pay Button */}
       <motion.button
         whileTap={{ scale: 0.97 }}
         onClick={handlePay}
@@ -125,10 +124,9 @@ const PaymentPage = () => {
           !selectedMember ? "bg-muted text-muted-foreground" : "gradient-accent text-primary-foreground glow-accent"
         }`}
       >
-        {processing ? "Memproses..." : "Bayar Sekarang - Rp 500.000"}
+        {processing ? "Memproses..." : `Bayar Sekarang - Rp ${iuran.toLocaleString("id-ID")}`}
       </motion.button>
 
-      {/* Payment History */}
       <div>
         <h3 className="text-sm font-semibold mb-3 text-muted-foreground">Riwayat Pembayaran</h3>
         <div className="space-y-2">
