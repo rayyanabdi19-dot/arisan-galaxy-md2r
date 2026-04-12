@@ -26,14 +26,17 @@ const SpinPage = () => {
   const [winner, setWinner] = useState<Member | null>(null);
   const [currentName, setCurrentName] = useState("");
   const [showResult, setShowResult] = useState(false);
+  const [iuran, setIuran] = useState(500000);
 
   const fetchData = useCallback(async () => {
-    const [membersRes, drawsRes] = await Promise.all([
+    const [membersRes, drawsRes, settingsRes] = await Promise.all([
       supabase.from("arisan_members").select("*").order("member_order"),
       supabase.from("arisan_draws").select("*, arisan_members(name)").order("round"),
+      supabase.from("arisan_settings").select("value").eq("key", "iuran_per_bulan").single(),
     ]);
     if (membersRes.data) setMembers(membersRes.data);
     if (drawsRes.data) setDraws(drawsRes.data as Draw[]);
+    if (settingsRes.data) setIuran(Number(settingsRes.data.value) || 500000);
   }, []);
 
   useEffect(() => {
@@ -45,6 +48,8 @@ const SpinPage = () => {
     setEligibleMembers(members.filter((m) => !wonIds.has(m.id)));
   }, [members, draws]);
 
+  const totalHadiah = members.length * iuran;
+
   const startSpin = async () => {
     if (eligibleMembers.length === 0 || spinning) return;
 
@@ -52,7 +57,6 @@ const SpinPage = () => {
     setWinner(null);
     setShowResult(false);
 
-    // Animate through names
     const duration = 3000;
     const interval = 80;
     const steps = duration / interval;
@@ -65,7 +69,6 @@ const SpinPage = () => {
 
       if (step >= steps) {
         clearInterval(timer);
-        // Pick random winner
         const winnerIdx = Math.floor(Math.random() * eligibleMembers.length);
         const selected = eligibleMembers[winnerIdx];
         setWinner(selected);
@@ -82,7 +85,7 @@ const SpinPage = () => {
     const { error } = await supabase.from("arisan_draws").insert({
       member_id: winner.id,
       round: nextRound,
-      amount: members.length * 500000,
+      amount: totalHadiah,
     });
     if (!error) {
       setShowResult(false);
@@ -96,7 +99,6 @@ const SpinPage = () => {
     <div className="space-y-5">
       <h1 className="text-xl font-bold">🎰 Guncang Arisan</h1>
 
-      {/* Spin Card */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -129,11 +131,10 @@ const SpinPage = () => {
         </p>
 
         <p className="text-primary-foreground font-bold mt-2 text-lg">
-          Hadiah: Rp {(members.length * 500000).toLocaleString("id-ID")}
+          Hadiah: Rp {totalHadiah.toLocaleString("id-ID")}
         </p>
       </motion.div>
 
-      {/* Spin Button */}
       {!showResult ? (
         <motion.button
           whileTap={{ scale: 0.95 }}
@@ -187,7 +188,6 @@ const SpinPage = () => {
         </div>
       )}
 
-      {/* Draw History */}
       <div>
         <h3 className="text-sm font-semibold mb-3 text-muted-foreground">Riwayat Undian</h3>
         {draws.length === 0 ? (

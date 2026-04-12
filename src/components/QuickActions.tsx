@@ -13,7 +13,7 @@ const actions = [
   { icon: Bell, label: "Notifikasi", color: "from-accent to-secondary", page: "home" },
   { icon: Gift, label: "Hadiah", color: "from-secondary to-accent", page: "home" },
   { icon: Shuffle, label: "Guncang", color: "from-primary to-secondary", page: "spin" },
-  { icon: Settings, label: "Pengaturan", color: "from-accent to-primary", page: "home" },
+  { icon: Settings, label: "Pengaturan", color: "from-accent to-primary", page: "settings" },
 ];
 
 const QuickActions = ({ onNavigate }: QuickActionsProps) => {
