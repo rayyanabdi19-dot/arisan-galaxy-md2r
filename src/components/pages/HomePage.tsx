@@ -13,24 +13,25 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
   const [drawCount, setDrawCount] = useState(0);
   const [totalPayments, setTotalPayments] = useState(0);
   const [recentPayments, setRecentPayments] = useState<any[]>([]);
+  const [iuranPerBulan, setIuranPerBulan] = useState(500000);
 
   useEffect(() => {
     const fetch = async () => {
-      const [m, d, p, rp] = await Promise.all([
+      const [m, d, p, rp, s] = await Promise.all([
         supabase.from("arisan_members").select("id", { count: "exact", head: true }),
         supabase.from("arisan_draws").select("id", { count: "exact", head: true }),
         supabase.from("arisan_payments").select("amount"),
         supabase.from("arisan_payments").select("*, arisan_members(name)").order("paid_at", { ascending: false }).limit(3),
+        supabase.from("arisan_settings").select("value").eq("key", "iuran_per_bulan").single(),
       ]);
       setMemberCount(m.count || 0);
       setDrawCount(d.count || 0);
       if (p.data) setTotalPayments(p.data.reduce((s: number, x: any) => s + x.amount, 0));
       if (rp.data) setRecentPayments(rp.data);
+      if (s.data) setIuranPerBulan(Number(s.data.value) || 500000);
     };
     fetch();
   }, []);
-
-  const iuranPerBulan = 500000;
   const totalHadiah = memberCount * iuranPerBulan;
 
   const stats = [

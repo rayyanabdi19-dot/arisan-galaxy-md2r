@@ -1,19 +1,25 @@
 import { motion } from "framer-motion";
-import { Info, HelpCircle, BookOpen, ChevronRight, Sparkles, Shield, Code, Heart } from "lucide-react";
-import { useState } from "react";
+import { Info, HelpCircle, BookOpen, ChevronRight, Sparkles, Shield, Code, Heart, Banknote, Save } from "lucide-react";
+import { useState, useEffect } from "react";
 import { APP_VERSION, BUILD_DATE } from "@/lib/version";
+import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
-type SubPage = "main" | "about" | "helpdesk" | "tutorial";
+type SubPage = "main" | "about" | "helpdesk" | "tutorial" | "nominal";
 
 const SettingsPage = () => {
   const [subPage, setSubPage] = useState<SubPage>("main");
 
   const menuItems = [
+    { id: "nominal" as SubPage, icon: Banknote, label: "Atur Nominal Arisan", desc: "Iuran bulanan & hadiah" },
     { id: "about" as SubPage, icon: Info, label: "Tentang Aplikasi", desc: "Versi, info & lisensi" },
     { id: "helpdesk" as SubPage, icon: HelpCircle, label: "Helpdesk", desc: "Bantuan & FAQ" },
     { id: "tutorial" as SubPage, icon: BookOpen, label: "Tutorial Penggunaan", desc: "Panduan lengkap" },
   ];
 
+  if (subPage === "nominal") return <NominalPage onBack={() => setSubPage("main")} />;
   if (subPage === "about") return <AboutPage onBack={() => setSubPage("main")} />;
   if (subPage === "helpdesk") return <HelpdeskPage onBack={() => setSubPage("main")} />;
   if (subPage === "tutorial") return <TutorialPage onBack={() => setSubPage("main")} />;
@@ -50,6 +56,96 @@ const SettingsPage = () => {
       <div className="text-center pt-4">
         <p className="text-xs text-muted-foreground">Arisan Galaxy v{APP_VERSION}</p>
       </div>
+    </div>
+  );
+};
+
+const NominalPage = ({ onBack }: { onBack: () => void }) => {
+  const [iuran, setIuran] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase
+        .from("arisan_settings")
+        .select("value")
+        .eq("key", "iuran_per_bulan")
+        .single();
+      if (data) setIuran(data.value);
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    const { error } = await supabase
+      .from("arisan_settings")
+      .update({ value: iuran })
+      .eq("key", "iuran_per_bulan");
+    setSaving(false);
+    if (error) {
+      toast.error("Gagal menyimpan nominal");
+    } else {
+      toast.success("Nominal iuran berhasil disimpan!");
+    }
+  };
+
+  const nominal = Number(iuran) || 0;
+
+  return (
+    <div className="space-y-6">
+      <BackButton onBack={onBack} />
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Atur Nominal Arisan</h1>
+        <p className="text-muted-foreground text-sm mt-1">Sesuaikan iuran bulanan arisan</p>
+      </div>
+
+      {loading ? (
+        <div className="glass-card rounded-2xl p-6 text-center text-muted-foreground text-sm">Memuat...</div>
+      ) : (
+        <>
+          <div className="glass-card rounded-2xl p-5 space-y-4">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground mb-2 block">Iuran Per Bulan (Rp)</label>
+              <Input
+                type="number"
+                value={iuran}
+                onChange={(e) => setIuran(e.target.value)}
+                placeholder="500000"
+                className="text-lg font-bold"
+              />
+            </div>
+            <div className="text-center py-3">
+              <p className="text-xs text-muted-foreground">Preview nominal</p>
+              <p className="text-2xl font-extrabold text-foreground mt-1">
+                Rp {nominal.toLocaleString("id-ID")}
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-1">per bulan per anggota</p>
+            </div>
+          </div>
+
+          <div className="glass-card rounded-2xl p-5">
+            <h3 className="text-sm font-semibold text-foreground mb-3">Ringkasan</h3>
+            <div className="space-y-2 text-xs text-muted-foreground">
+              <div className="flex justify-between">
+                <span>Iuran bulanan</span>
+                <span className="font-medium text-foreground">Rp {nominal.toLocaleString("id-ID")}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Iuran tahunan (12 bulan)</span>
+                <span className="font-medium text-foreground">Rp {(nominal * 12).toLocaleString("id-ID")}</span>
+              </div>
+            </div>
+          </div>
+
+          <Button onClick={handleSave} disabled={saving || !iuran} className="w-full rounded-2xl h-12 text-sm font-semibold">
+            <Save className="w-4 h-4 mr-2" />
+            {saving ? "Menyimpan..." : "Simpan Nominal"}
+          </Button>
+        </>
+      )}
     </div>
   );
 };
