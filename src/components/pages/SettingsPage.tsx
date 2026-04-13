@@ -7,19 +7,21 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-type SubPage = "main" | "about" | "helpdesk" | "tutorial" | "nominal";
+type SubPage = "main" | "about" | "helpdesk" | "tutorial" | "nominal" | "reset";
 
 const SettingsPage = () => {
   const [subPage, setSubPage] = useState<SubPage>("main");
 
   const menuItems = [
     { id: "nominal" as SubPage, icon: Banknote, label: "Atur Nominal Arisan", desc: "Iuran bulanan & hadiah" },
+    { id: "reset" as SubPage, icon: RotateCcw, label: "Reset Data", desc: "Hapus data arisan" },
     { id: "about" as SubPage, icon: Info, label: "Tentang Aplikasi", desc: "Versi, info & lisensi" },
     { id: "helpdesk" as SubPage, icon: HelpCircle, label: "Helpdesk", desc: "Bantuan & FAQ" },
     { id: "tutorial" as SubPage, icon: BookOpen, label: "Tutorial Penggunaan", desc: "Panduan lengkap" },
   ];
 
   if (subPage === "nominal") return <NominalPage onBack={() => setSubPage("main")} />;
+  if (subPage === "reset") return <ResetDataPage onBack={() => setSubPage("main")} />;
   if (subPage === "about") return <AboutPage onBack={() => setSubPage("main")} />;
   if (subPage === "helpdesk") return <HelpdeskPage onBack={() => setSubPage("main")} />;
   if (subPage === "tutorial") return <TutorialPage onBack={() => setSubPage("main")} />;
