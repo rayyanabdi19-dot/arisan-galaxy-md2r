@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { TrendingUp, Users, Calendar } from "lucide-react";
+import { TrendingUp, Users, Calendar, AlertTriangle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import QuickActions from "../QuickActions";
@@ -14,6 +14,7 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
   const [totalPayments, setTotalPayments] = useState(0);
   const [recentPayments, setRecentPayments] = useState<any[]>([]);
   const [iuranPerBulan, setIuranPerBulan] = useState(500000);
+  const [unpaidMembers, setUnpaidMembers] = useState<any[]>([]);
 
   useEffect(() => {
     const fetch = async () => {
