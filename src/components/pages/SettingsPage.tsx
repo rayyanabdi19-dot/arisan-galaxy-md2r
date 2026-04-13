@@ -11,6 +11,19 @@ type SubPage = "main" | "about" | "helpdesk" | "tutorial" | "nominal" | "reset";
 
 const SettingsPage = () => {
   const [subPage, setSubPage] = useState<SubPage>("main");
+  const [isDark, setIsDark] = useState(() => !document.documentElement.classList.contains("light"));
+
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    if (next) {
+      document.documentElement.classList.remove("light");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.add("light");
+      localStorage.setItem("theme", "light");
+    }
+  };
 
   const menuItems = [
     { id: "nominal" as SubPage, icon: Banknote, label: "Atur Nominal Arisan", desc: "Iuran bulanan & hadiah" },
