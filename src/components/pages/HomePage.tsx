@@ -175,6 +175,7 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
           </button>
         </motion.div>
       )}
+    </div>
   );
 };
 
