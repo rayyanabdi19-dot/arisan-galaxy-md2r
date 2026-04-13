@@ -120,6 +120,7 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
         </motion.div>
       )}
 
+      <div>
         <h3 className="text-sm font-semibold mb-3 text-muted-foreground">Menu Cepat</h3>
         <QuickActions onNavigate={onNavigate} />
       </div>
