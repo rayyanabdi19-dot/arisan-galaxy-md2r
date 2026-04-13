@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { TrendingUp, Users, Calendar } from "lucide-react";
+import { TrendingUp, Users, Calendar, AlertTriangle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import QuickActions from "../QuickActions";
@@ -14,23 +14,33 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
   const [totalPayments, setTotalPayments] = useState(0);
   const [recentPayments, setRecentPayments] = useState<any[]>([]);
   const [iuranPerBulan, setIuranPerBulan] = useState(500000);
+  const [unpaidMembers, setUnpaidMembers] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetch = async () => {
-      const [m, d, p, rp, s] = await Promise.all([
+    const fetchData = async () => {
+      const currentMonth = new Date().toISOString().slice(0, 7); // "2026-04"
+
+      const [m, d, p, rp, s, allMembers, paidThisMonth] = await Promise.all([
         supabase.from("arisan_members").select("id", { count: "exact", head: true }),
         supabase.from("arisan_draws").select("id", { count: "exact", head: true }),
         supabase.from("arisan_payments").select("amount"),
         supabase.from("arisan_payments").select("*, arisan_members(name)").order("paid_at", { ascending: false }).limit(3),
         supabase.from("arisan_settings").select("value").eq("key", "iuran_per_bulan").single(),
+        supabase.from("arisan_members").select("id, name, phone").order("member_order"),
+        supabase.from("arisan_payments").select("member_id").eq("month", currentMonth),
       ]);
       setMemberCount(m.count || 0);
       setDrawCount(d.count || 0);
       if (p.data) setTotalPayments(p.data.reduce((s: number, x: any) => s + x.amount, 0));
       if (rp.data) setRecentPayments(rp.data);
       if (s.data) setIuranPerBulan(Number(s.data.value) || 500000);
+
+      if (allMembers.data && paidThisMonth.data) {
+        const paidIds = new Set(paidThisMonth.data.map((p: any) => p.member_id));
+        setUnpaidMembers(allMembers.data.filter((m: any) => !paidIds.has(m.id)));
+      }
     };
-    fetch();
+    fetchData();
   }, []);
   const totalHadiah = memberCount * iuranPerBulan;
 
@@ -72,6 +82,43 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
           </div>
         </div>
       </motion.div>
+
+      {unpaidMembers.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="w-4 h-4 text-destructive" />
+            <h3 className="text-sm font-semibold text-destructive">
+              Pengingat Iuran — {new Date().toLocaleString("id-ID", { month: "long", year: "numeric" })}
+            </h3>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            {unpaidMembers.length} anggota belum membayar iuran bulan ini
+          </p>
+          <div className="space-y-2">
+            {unpaidMembers.map((m: any) => (
+              <div key={m.id} className="flex items-center justify-between glass-card-light rounded-xl p-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-destructive/20 flex items-center justify-center text-[10px] font-bold text-destructive">
+                    {m.name.split(" ").map((n: string) => n[0]).join("")}
+                  </div>
+                  <span className="text-sm font-medium">{m.name}</span>
+                </div>
+                <span className="text-[11px] text-destructive font-semibold">Belum bayar</span>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => onNavigate("payment")}
+            className="mt-3 w-full text-center text-xs font-semibold text-primary py-2 rounded-xl border border-primary/30 hover:bg-primary/10 transition-colors"
+          >
+            Catat Pembayaran →
+          </button>
+        </motion.div>
+      )}
 
       <div>
         <h3 className="text-sm font-semibold mb-3 text-muted-foreground">Menu Cepat</h3>
