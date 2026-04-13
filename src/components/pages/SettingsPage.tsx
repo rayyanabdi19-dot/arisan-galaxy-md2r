@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Info, HelpCircle, BookOpen, ChevronRight, Sparkles, Shield, Code, Heart, Banknote, Save, ArrowLeft, RotateCcw, Trash2, AlertTriangle } from "lucide-react";
+import { Info, HelpCircle, BookOpen, ChevronRight, Sparkles, Shield, Code, Heart, Banknote, Save, ArrowLeft, RotateCcw, Trash2, AlertTriangle, Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { APP_VERSION, BUILD_DATE } from "@/lib/version";
 import { supabase } from "@/integrations/supabase/client";
