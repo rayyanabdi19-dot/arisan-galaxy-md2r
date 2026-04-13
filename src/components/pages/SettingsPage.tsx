@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Info, HelpCircle, BookOpen, ChevronRight, Sparkles, Shield, Code, Heart, Banknote, Save, ArrowLeft } from "lucide-react";
+import { Info, HelpCircle, BookOpen, ChevronRight, Sparkles, Shield, Code, Heart, Banknote, Save, ArrowLeft, RotateCcw, Trash2, AlertTriangle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { APP_VERSION, BUILD_DATE } from "@/lib/version";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,19 +7,21 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-type SubPage = "main" | "about" | "helpdesk" | "tutorial" | "nominal";
+type SubPage = "main" | "about" | "helpdesk" | "tutorial" | "nominal" | "reset";
 
 const SettingsPage = () => {
   const [subPage, setSubPage] = useState<SubPage>("main");
 
   const menuItems = [
     { id: "nominal" as SubPage, icon: Banknote, label: "Atur Nominal Arisan", desc: "Iuran bulanan & hadiah" },
+    { id: "reset" as SubPage, icon: RotateCcw, label: "Reset Data", desc: "Hapus data arisan" },
     { id: "about" as SubPage, icon: Info, label: "Tentang Aplikasi", desc: "Versi, info & lisensi" },
     { id: "helpdesk" as SubPage, icon: HelpCircle, label: "Helpdesk", desc: "Bantuan & FAQ" },
     { id: "tutorial" as SubPage, icon: BookOpen, label: "Tutorial Penggunaan", desc: "Panduan lengkap" },
   ];
 
   if (subPage === "nominal") return <NominalPage onBack={() => setSubPage("main")} />;
+  if (subPage === "reset") return <ResetDataPage onBack={() => setSubPage("main")} />;
   if (subPage === "about") return <AboutPage onBack={() => setSubPage("main")} />;
   if (subPage === "helpdesk") return <HelpdeskPage onBack={() => setSubPage("main")} />;
   if (subPage === "tutorial") return <TutorialPage onBack={() => setSubPage("main")} />;
@@ -294,6 +296,110 @@ const TutorialPage = ({ onBack }: { onBack: () => void }) => {
               <h3 className="text-sm font-semibold text-foreground">{item.title}</h3>
               <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{item.desc}</p>
             </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const ResetDataPage = ({ onBack }: { onBack: () => void }) => {
+  const [resetting, setResetting] = useState<string | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<string | null>(null);
+
+  const resetOptions = [
+    { key: "payments", label: "Data Pembayaran", desc: "Hapus semua riwayat pembayaran iuran", icon: Banknote, table: "arisan_payments" as const },
+    { key: "draws", label: "Data Undian", desc: "Hapus semua hasil guncang/undian arisan", icon: Sparkles, table: "arisan_draws" as const },
+    { key: "members", label: "Data Anggota", desc: "Hapus semua data anggota arisan", icon: Trash2, table: "arisan_members" as const },
+    { key: "all", label: "Semua Data", desc: "Hapus seluruh data (anggota, pembayaran, undian)", icon: AlertTriangle, table: "all" as const },
+  ];
+
+  const handleReset = async (key: string) => {
+    setResetting(key);
+    try {
+      if (key === "all") {
+        await supabase.from("arisan_payments").delete().gte("created_at", "1970-01-01");
+        await supabase.from("arisan_draws").delete().gte("created_at", "1970-01-01");
+        await supabase.from("arisan_members").delete().gte("created_at", "1970-01-01");
+      } else {
+        const table = resetOptions.find(o => o.key === key)!.table;
+        if (table !== "all") {
+          await supabase.from(table).delete().gte("created_at", "1970-01-01");
+        }
+      }
+      toast.success("Data berhasil direset!");
+    } catch {
+      toast.error("Gagal mereset data");
+    }
+    setResetting(null);
+    setConfirmTarget(null);
+  };
+
+  return (
+    <div className="space-y-6">
+      <BackButton onBack={onBack} />
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Reset Data</h1>
+        <p className="text-muted-foreground text-sm mt-1">Hapus data arisan secara selektif</p>
+      </div>
+
+      <div className="glass-card rounded-2xl p-4 flex items-start gap-3 border-destructive/30">
+        <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          <span className="font-semibold text-destructive">Peringatan:</span> Data yang sudah dihapus tidak dapat dikembalikan. Pastikan Anda yakin sebelum melanjutkan.
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        {resetOptions.map((opt, i) => (
+          <motion.div
+            key={opt.key}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.08 }}
+            className="glass-card rounded-2xl p-4 space-y-3"
+          >
+            <div className="flex items-center gap-4">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${opt.key === "all" ? "bg-destructive/20" : "bg-muted"}`}>
+                <opt.icon className={`w-5 h-5 ${opt.key === "all" ? "text-destructive" : "text-muted-foreground"}`} />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-foreground">{opt.label}</p>
+                <p className="text-xs text-muted-foreground">{opt.desc}</p>
+              </div>
+            </div>
+
+            {confirmTarget === opt.key ? (
+              <div className="flex gap-2">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="flex-1 rounded-xl text-xs"
+                  disabled={resetting === opt.key}
+                  onClick={() => handleReset(opt.key)}
+                >
+                  {resetting === opt.key ? "Menghapus..." : "Ya, Hapus"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 rounded-xl text-xs"
+                  onClick={() => setConfirmTarget(null)}
+                >
+                  Batal
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full rounded-xl text-xs border-destructive/30 text-destructive hover:bg-destructive/10"
+                onClick={() => setConfirmTarget(opt.key)}
+              >
+                <Trash2 className="w-3 h-3 mr-1" />
+                Reset {opt.label}
+              </Button>
+            )}
           </motion.div>
         ))}
       </div>
