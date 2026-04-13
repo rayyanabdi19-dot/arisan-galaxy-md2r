@@ -17,21 +17,30 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
   const [unpaidMembers, setUnpaidMembers] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetch = async () => {
-      const [m, d, p, rp, s] = await Promise.all([
+    const fetchData = async () => {
+      const currentMonth = new Date().toISOString().slice(0, 7); // "2026-04"
+
+      const [m, d, p, rp, s, allMembers, paidThisMonth] = await Promise.all([
         supabase.from("arisan_members").select("id", { count: "exact", head: true }),
         supabase.from("arisan_draws").select("id", { count: "exact", head: true }),
         supabase.from("arisan_payments").select("amount"),
         supabase.from("arisan_payments").select("*, arisan_members(name)").order("paid_at", { ascending: false }).limit(3),
         supabase.from("arisan_settings").select("value").eq("key", "iuran_per_bulan").single(),
+        supabase.from("arisan_members").select("id, name, phone").order("member_order"),
+        supabase.from("arisan_payments").select("member_id").eq("month", currentMonth),
       ]);
       setMemberCount(m.count || 0);
       setDrawCount(d.count || 0);
       if (p.data) setTotalPayments(p.data.reduce((s: number, x: any) => s + x.amount, 0));
       if (rp.data) setRecentPayments(rp.data);
       if (s.data) setIuranPerBulan(Number(s.data.value) || 500000);
+
+      if (allMembers.data && paidThisMonth.data) {
+        const paidIds = new Set(paidThisMonth.data.map((p: any) => p.member_id));
+        setUnpaidMembers(allMembers.data.filter((m: any) => !paidIds.has(m.id)));
+      }
     };
-    fetch();
+    fetchData();
   }, []);
   const totalHadiah = memberCount * iuranPerBulan;
 
