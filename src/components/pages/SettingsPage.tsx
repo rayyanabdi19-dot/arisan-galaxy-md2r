@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Info, HelpCircle, BookOpen, ChevronRight, Sparkles, Shield, Code, Heart, Banknote, Save, ArrowLeft, RotateCcw, Trash2, AlertTriangle } from "lucide-react";
+import { Info, HelpCircle, BookOpen, ChevronRight, Sparkles, Shield, Code, Heart, Banknote, Save, ArrowLeft, RotateCcw, Trash2, AlertTriangle, Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { APP_VERSION, BUILD_DATE } from "@/lib/version";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,19 @@ type SubPage = "main" | "about" | "helpdesk" | "tutorial" | "nominal" | "reset";
 
 const SettingsPage = () => {
   const [subPage, setSubPage] = useState<SubPage>("main");
+  const [isDark, setIsDark] = useState(() => !document.documentElement.classList.contains("light"));
+
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    if (next) {
+      document.documentElement.classList.remove("light");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.add("light");
+      localStorage.setItem("theme", "light");
+    }
+  };
 
   const menuItems = [
     { id: "nominal" as SubPage, icon: Banknote, label: "Atur Nominal Arisan", desc: "Iuran bulanan & hadiah" },
@@ -53,6 +66,24 @@ const SettingsPage = () => {
             <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-accent transition-colors" />
           </motion.button>
         ))}
+      </div>
+
+      <div className="glass-card rounded-2xl p-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl gradient-accent flex items-center justify-center shrink-0">
+            {isDark ? <Moon className="w-5 h-5 text-accent-foreground" /> : <Sun className="w-5 h-5 text-accent-foreground" />}
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">Tema Aplikasi</p>
+            <p className="text-xs text-muted-foreground">{isDark ? "Mode Gelap" : "Mode Terang"}</p>
+          </div>
+        </div>
+        <button
+          onClick={toggleTheme}
+          className={`relative w-12 h-7 rounded-full transition-colors ${isDark ? "bg-primary" : "bg-muted"}`}
+        >
+          <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${isDark ? "translate-x-5" : "translate-x-0"}`} />
+        </button>
       </div>
 
       <div className="text-center pt-4">
