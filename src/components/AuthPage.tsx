@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, Lock, User, Eye, EyeOff, Sparkles } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { APP_VERSION } from "@/lib/version";
+import logo from "/logo.png";
 
 const AuthPage = ({ onAuth }: { onAuth: () => void }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -64,9 +65,9 @@ const AuthPage = ({ onAuth }: { onAuth: () => void }) => {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
-            className="w-20 h-20 rounded-3xl gradient-hero mx-auto mb-4 flex items-center justify-center glow-primary"
+            className="w-20 h-20 rounded-3xl mx-auto mb-4 flex items-center justify-center glow-primary overflow-hidden"
           >
-            <Sparkles className="w-10 h-10 text-primary-foreground" />
+            <img src={logo} alt="Arisan Galaxy" width={80} height={80} className="w-full h-full object-contain" />
           </motion.div>
           <h1 className="text-2xl font-bold text-foreground">Arisan Galaxy</h1>
           <p className="text-muted-foreground text-sm mt-1">
