@@ -4,10 +4,23 @@ import logo from "/logo.png";
 
 export const SplashScreen = () => {
   const [visible, setVisible] = useState(true);
+  const [progress, setProgress] = useState(0);
+
+  const DURATION = 2000;
 
   useEffect(() => {
-    const t = setTimeout(() => setVisible(false), 2000);
-    return () => clearTimeout(t);
+    const start = Date.now();
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - start;
+      const pct = Math.min(100, (elapsed / DURATION) * 100);
+      setProgress(pct);
+      if (pct >= 100) clearInterval(interval);
+    }, 30);
+    const t = setTimeout(() => setVisible(false), DURATION);
+    return () => {
+      clearTimeout(t);
+      clearInterval(interval);
+    };
   }, []);
 
   return (
@@ -47,16 +60,18 @@ export const SplashScreen = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
-            className="absolute bottom-12 flex gap-1.5"
+            className="absolute bottom-12 flex flex-col items-center gap-3 w-56"
           >
-            {[0, 1, 2].map((i) => (
+            <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-primary/15">
               <motion.div
-                key={i}
-                animate={{ y: [0, -8, 0] }}
-                transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }}
-                className="w-2 h-2 rounded-full bg-primary"
+                className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-primary to-accent"
+                style={{ width: `${progress}%` }}
+                transition={{ ease: "linear" }}
               />
-            ))}
+            </div>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              Memuat {Math.round(progress)}%
+            </span>
           </motion.div>
         </motion.div>
       )}
