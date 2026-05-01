@@ -3,7 +3,7 @@ import { TrendingUp, Users, Calendar, AlertTriangle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import QuickActions from "../QuickActions";
-import logo from "/logo.png";
+import LogoAvatar from "../LogoAvatar";
 
 interface HomePageProps {
   onNavigate: (page: string) => void;
@@ -58,9 +58,7 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
           <p className="text-muted-foreground text-sm">Selamat datang 👋</p>
           <h1 className="text-xl font-bold">Arisan Keluarga</h1>
         </div>
-        <div className="w-10 h-10 rounded-2xl overflow-hidden glow-primary flex items-center justify-center bg-background">
-          <img src={logo} alt="Arisan Galaxy" className="w-full h-full object-contain" />
-        </div>
+        <LogoAvatar size="md" />
       </div>
 
       <motion.div
