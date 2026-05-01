@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Info, HelpCircle, BookOpen, ChevronRight, Sparkles, Shield, Code, Heart, Banknote, Save, ArrowLeft, RotateCcw, Trash2, AlertTriangle, Sun, Moon } from "lucide-react";
+import LogoAvatar from "@/components/LogoAvatar";
 import { useState, useEffect } from "react";
 import { APP_VERSION, BUILD_DATE } from "@/lib/version";
 import { supabase } from "@/integrations/supabase/client";
@@ -202,9 +203,9 @@ const AboutPage = ({ onBack }: { onBack: () => void }) => (
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: "spring", stiffness: 200 }}
-        className="w-20 h-20 rounded-3xl gradient-hero mx-auto mb-4 flex items-center justify-center glow-primary"
+        className="mx-auto mb-4 w-fit"
       >
-        <Sparkles className="w-10 h-10 text-primary-foreground" />
+        <LogoAvatar size="xl" />
       </motion.div>
       <h1 className="text-2xl font-bold text-foreground">Arisan Galaxy</h1>
       <p className="text-muted-foreground text-sm mt-1">Aplikasi Manajemen Arisan Digital</p>
