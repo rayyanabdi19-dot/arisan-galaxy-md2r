@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, RotateCcw, Sparkles, CheckCircle2 } from "lucide-react";
+import { Trophy, RotateCcw, Sparkles, CheckCircle2, MessageCircle, X } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -7,6 +7,7 @@ interface Member {
   id: string;
   name: string;
   member_order: number;
+  phone?: string;
 }
 
 interface Draw {
@@ -27,6 +28,9 @@ const SpinPage = () => {
   const [currentName, setCurrentName] = useState("");
   const [showResult, setShowResult] = useState(false);
   const [iuran, setIuran] = useState(500000);
+  const [broadcastWinner, setBroadcastWinner] = useState<Member | null>(null);
+  const [broadcastRound, setBroadcastRound] = useState(0);
+  const [sentIds, setSentIds] = useState<Set<string>>(new Set());
 
   const fetchData = useCallback(async () => {
     const [membersRes, drawsRes, settingsRes] = await Promise.all([
@@ -89,10 +93,39 @@ const SpinPage = () => {
     });
     if (!error) {
       setShowResult(false);
+      setBroadcastWinner(winner);
+      setBroadcastRound(nextRound);
+      setSentIds(new Set());
       setWinner(null);
       setCurrentName("");
       fetchData();
     }
+  };
+
+  const buildMessage = (recipient: Member, w: Member, round: number) => {
+    const tanggal = new Date().toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    return `Halo ${recipient.name} 👋\n\n🎉 *Pengumuman Arisan* 🎉\n\nPemenang Putaran #${round} (${tanggal}):\n🏆 *${w.name}*\n💰 Hadiah: Rp ${totalHadiah.toLocaleString("id-ID")}\n\nTerima kasih atas partisipasinya. Sampai jumpa di putaran berikutnya!`;
+  };
+
+  const sanitizePhone = (phone: string) => {
+    let p = phone.replace(/\D/g, "");
+    if (p.startsWith("0")) p = "62" + p.slice(1);
+    if (p.startsWith("8")) p = "62" + p;
+    return p;
+  };
+
+  const sendWhatsApp = (recipient: Member) => {
+    if (!broadcastWinner || !recipient.phone) return;
+    const msg = encodeURIComponent(
+      buildMessage(recipient, broadcastWinner, broadcastRound)
+    );
+    const phone = sanitizePhone(recipient.phone);
+    window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
+    setSentIds((prev) => new Set(prev).add(recipient.id));
   };
 
   return (
@@ -225,6 +258,86 @@ const SpinPage = () => {
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {broadcastWinner && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+            onClick={() => setBroadcastWinner(null)}
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="glass-card rounded-3xl p-5 w-full max-w-md max-h-[85vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5 text-accent" />
+                  <h3 className="font-bold text-base">Broadcast WhatsApp</h3>
+                </div>
+                <button
+                  onClick={() => setBroadcastWinner(null)}
+                  className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">
+                Kirim pengumuman pemenang <span className="font-bold text-foreground">{broadcastWinner.name}</span> ke seluruh anggota.
+              </p>
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => {
+                  members.forEach((m, i) => {
+                    if (m.phone) setTimeout(() => sendWhatsApp(m), i * 400);
+                  });
+                }}
+                className="w-full gradient-accent text-primary-foreground rounded-2xl py-3 font-bold text-sm flex items-center justify-center gap-2 mb-3"
+              >
+                <MessageCircle className="w-4 h-4" /> Kirim ke Semua
+              </motion.button>
+              <div className="flex-1 overflow-y-auto space-y-2">
+                {members.map((m) => {
+                  const sent = sentIds.has(m.id);
+                  const hasPhone = !!m.phone;
+                  return (
+                    <div
+                      key={m.id}
+                      className="glass-card-light rounded-2xl p-3 flex items-center justify-between"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold truncate">{m.name}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {m.phone || "Tidak ada nomor"}
+                        </p>
+                      </div>
+                      <button
+                        disabled={!hasPhone}
+                        onClick={() => sendWhatsApp(m)}
+                        className={`shrink-0 rounded-xl px-3 py-2 text-xs font-bold flex items-center gap-1 ${
+                          !hasPhone
+                            ? "bg-muted text-muted-foreground"
+                            : sent
+                            ? "bg-secondary/20 text-secondary"
+                            : "gradient-accent text-primary-foreground"
+                        }`}
+                      >
+                        <MessageCircle className="w-3 h-3" />
+                        {sent ? "Terkirim" : "Kirim"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
