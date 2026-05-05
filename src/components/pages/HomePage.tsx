@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { TrendingUp, Users, Calendar, AlertTriangle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +17,8 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
   const [recentPayments, setRecentPayments] = useState<any[]>([]);
   const [iuranPerBulan, setIuranPerBulan] = useState(500000);
   const [unpaidMembers, setUnpaidMembers] = useState<any[]>([]);
+  const [allMemberNames, setAllMemberNames] = useState<string[]>([]);
+  const [tickerIndex, setTickerIndex] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,10 +42,20 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
       if (allMembers.data && paidThisMonth.data) {
         const paidIds = new Set(paidThisMonth.data.map((p: any) => p.member_id));
         setUnpaidMembers(allMembers.data.filter((m: any) => !paidIds.has(m.id)));
+        setAllMemberNames(allMembers.data.map((m: any) => m.name));
       }
     };
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (allMemberNames.length === 0) return;
+    const t = setInterval(() => {
+      setTickerIndex((i) => (i + 1) % allMemberNames.length);
+    }, 5000);
+    return () => clearInterval(t);
+  }, [allMemberNames]);
+
   const totalHadiah = memberCount * iuranPerBulan;
 
   const stats = [
@@ -68,8 +81,34 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
       >
         <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-primary-foreground/5 -translate-y-8 translate-x-8" />
         <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-primary-foreground/5 translate-y-6 -translate-x-6" />
-        <p className="text-primary-foreground/70 text-sm font-medium">Saldo Arisan</p>
-        <h2 className="text-3xl font-extrabold text-primary-foreground mt-1">Rp {totalPayments.toLocaleString("id-ID")}</h2>
+        <div className="flex items-start justify-between gap-3 relative z-10">
+          <div className="flex-1 min-w-0">
+            <p className="text-primary-foreground/70 text-sm font-medium">Saldo Arisan</p>
+            <h2 className="text-3xl font-extrabold text-primary-foreground mt-1 truncate">Rp {totalPayments.toLocaleString("id-ID")}</h2>
+          </div>
+          {allMemberNames.length > 0 && (
+            <div className="shrink-0 w-28 rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/15 px-2.5 py-2">
+              <div className="flex items-center gap-1 mb-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+                <p className="text-[9px] uppercase tracking-wider text-primary-foreground/70 font-semibold">Live</p>
+              </div>
+              <div className="h-5 overflow-hidden relative">
+                <AnimatePresence mode="wait">
+                  <motion.p
+                    key={tickerIndex}
+                    initial={{ y: 16, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -16, opacity: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="text-xs font-semibold text-primary-foreground truncate"
+                  >
+                    {allMemberNames[tickerIndex]}
+                  </motion.p>
+                </AnimatePresence>
+              </div>
+            </div>
+          )}
+        </div>
         <div className="flex gap-4 mt-4">
           <div>
             <p className="text-primary-foreground/60 text-[11px]">Iuran/bulan</p>
