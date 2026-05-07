@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Mail, Lock, User, Eye, EyeOff, Users } from "lucide-react";
 import { toast } from "sonner";
 import { APP_VERSION } from "@/lib/version";
@@ -17,6 +17,7 @@ const AuthPage = ({ onAuth }: { onAuth: () => void }) => {
   const [loading, setLoading] = useState(false);
   const [liveNames, setLiveNames] = useState<string[]>([]);
   const [tickerIndex, setTickerIndex] = useState(0);
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     let mounted = true;
@@ -102,38 +103,42 @@ const AuthPage = ({ onAuth }: { onAuth: () => void }) => {
         {/* Live Users Ticker */}
         {liveNames.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="glass-card rounded-2xl px-4 py-3 mb-4 flex items-center gap-3"
+            className="glass-card rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 mb-4 flex items-center gap-2.5 sm:gap-3 min-w-0"
+            aria-live="polite"
           >
             <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-primary/15 shrink-0">
               <Users className="w-4 h-4 text-primary" />
               <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                {!prefersReducedMotion && (
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                )}
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
               </span>
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 overflow-hidden">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70 leading-none mb-1">
                 Pengguna aktif
               </p>
-              <div className="h-5 overflow-hidden relative">
-                <AnimatePresence mode="wait">
+              <div className="h-5 relative overflow-hidden">
+                <AnimatePresence mode="wait" initial={false}>
                   <motion.p
                     key={tickerIndex}
-                    initial={{ y: 20, opacity: 0 }}
+                    initial={prefersReducedMotion ? { opacity: 0 } : { y: 14, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: -20, opacity: 0 }}
-                    transition={{ duration: 0.4 }}
-                    className="text-sm font-semibold text-foreground truncate"
+                    exit={prefersReducedMotion ? { opacity: 0 } : { y: -14, opacity: 0 }}
+                    transition={{ duration: prefersReducedMotion ? 0.15 : 0.45, ease: [0.22, 1, 0.36, 1] }}
+                    className="absolute inset-0 text-sm font-semibold text-foreground truncate leading-5"
+                    title={liveNames[tickerIndex]}
                   >
                     {liveNames[tickerIndex]}
                   </motion.p>
                 </AnimatePresence>
               </div>
             </div>
-            <span className="text-[10px] text-muted-foreground/60 shrink-0">
+            <span className="text-[10px] text-muted-foreground/60 shrink-0 tabular-nums">
               {liveNames.length} anggota
             </span>
           </motion.div>
