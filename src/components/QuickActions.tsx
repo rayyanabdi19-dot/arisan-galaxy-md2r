@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { CreditCard, UserPlus, Trophy, Bell, Settings, PieChart, Gift, Shuffle } from "lucide-react";
+import { CreditCard, UserPlus, Trophy, Bell, Settings, PieChart, Gift, Shuffle, Dices } from "lucide-react";
 
 interface QuickActionsProps {
   onNavigate: (page: string) => void;
@@ -8,7 +8,7 @@ interface QuickActionsProps {
 const actions = [
   { icon: CreditCard, label: "Bayar", color: "from-primary to-secondary", page: "payment" },
   { icon: UserPlus, label: "Tambah", color: "from-accent to-primary", page: "members" },
-  { icon: Trophy, label: "Undian", color: "from-secondary to-primary", page: "schedule" },
+  { icon: Dices, label: "Undian", color: "from-secondary to-primary", page: "undian" },
   { icon: PieChart, label: "Laporan", color: "from-primary to-accent", page: "history" },
   { icon: Bell, label: "Notifikasi", color: "from-accent to-secondary", page: "home" },
   { icon: Gift, label: "Hadiah", color: "from-secondary to-accent", page: "home" },
