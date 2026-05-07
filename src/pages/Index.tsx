@@ -6,6 +6,7 @@ import PaymentPage from "@/components/pages/PaymentPage";
 import SchedulePage from "@/components/pages/SchedulePage";
 import HistoryPage from "@/components/pages/HistoryPage";
 import SpinPage from "@/components/pages/SpinPage";
+import UndianPage from "@/components/pages/UndianPage";
 import AuthPage from "@/components/AuthPage";
 import SettingsPage from "@/components/pages/SettingsPage";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,6 +41,7 @@ const Index = () => {
       case "schedule": return <SchedulePage />;
       case "history": return <HistoryPage />;
       case "spin": return <SpinPage />;
+      case "undian": return <UndianPage />;
       case "settings": return <SettingsPage />;
       default: return <HomePage onNavigate={setActivePage} />;
     }
